@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-app/
+release/
+*.dmg
+*.exe
+*.app
+
+# Runtime data
+.pawnbutler/
+
+# Environment & secrets
+.env
+.env.*
+pawnbutler.config.yaml
+
+# WhatsApp session
+whatsapp-session/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# OS
+.DS_Store
+Thumbs.db

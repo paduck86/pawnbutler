@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
+  <title>PawnButler</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h1>PawnButler</h1>
+        <div class="subtitle">Agent Control Panel</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-item active" data-panel="dashboard">
+          <span class="icon">&#9608;</span>
+          <span>Dashboard</span>
+        </div>
+        <div class="nav-item" data-panel="agent-mind">
+          <span class="icon">&#9733;</span>
+          <span>Agent Mind</span>
+        </div>
+        <div class="nav-item" data-panel="messages">
+          <span class="icon">&#9993;</span>
+          <span>Messages</span>
+          <span class="badge" id="messages-badge" style="display:none">0</span>
+        </div>
+        <div class="nav-item" data-panel="approval">
+          <span class="icon">&#10003;</span>
+          <span>Approvals</span>
+          <span class="badge" id="approval-badge" style="display:none">0</span>
+        </div>
+        <div class="nav-item" data-panel="memory">
+          <span class="icon">&#9998;</span>
+          <span>Memory</span>
+        </div>
+        <div class="nav-item" data-panel="browser">
+          <span class="icon">&#9788;</span>
+          <span>Browser</span>
+        </div>
+        <div class="nav-item" data-panel="cron">
+          <span class="icon">&#9200;</span>
+          <span>Cron Jobs</span>
+        </div>
+        <div class="nav-item" data-panel="usage">
+          <span class="icon">&#9632;</span>
+          <span>Usage</span>
+        </div>
+        <div class="nav-item" data-panel="audit">
+          <span class="icon">&#9776;</span>
+          <span>Audit Log</span>
+        </div>
+        <div class="nav-item" data-panel="settings">
+          <span class="icon">&#9881;</span>
+          <span>Settings</span>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        PawnButler v0.2.0
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="panel active" id="panel-dashboard"></div>
+      <div class="panel" id="panel-agent-mind"></div>
+      <div class="panel" id="panel-messages"></div>
+      <div class="panel" id="panel-approval"></div>
+      <div class="panel" id="panel-memory"></div>
+      <div class="panel" id="panel-browser"></div>
+      <div class="panel" id="panel-cron"></div>
+      <div class="panel" id="panel-usage"></div>
+      <div class="panel" id="panel-audit"></div>
+      <div class="panel" id="panel-settings"></div>
+    </main>
+  </div>
+
+  <script src="./index.js"></script>
+</body>
+</html>

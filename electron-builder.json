@@ -1,0 +1,30 @@
+{
+  "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
+  "appId": "com.pawnbutler.app",
+  "productName": "PawnButler",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist-app/**/*.js",
+    "dist-app/**/*.js.map",
+    "dist-app/app/renderer/index.html",
+    "dist-app/app/renderer/styles.css",
+    "package.json"
+  ],
+  "extraMetadata": {
+    "main": "dist-app/app/main/main.js"
+  },
+  "mac": {
+    "target": "dmg",
+    "category": "public.app-category.utilities",
+    "identity": null
+  },
+  "dmg": {
+    "title": "PawnButler",
+    "contents": [
+      { "x": 130, "y": 220 },
+      { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+    ]
+  }
+}

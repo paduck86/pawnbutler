@@ -1,0 +1,107 @@
+# PawnButler Configuration Example
+# Copy this file to pawnbutler.config.yaml and customize as needed.
+
+agents:
+  - id: guardian
+    role: guardian
+    name: Guardian
+    description: Safety monitor that validates all actions before execution
+    allowedTools: []
+    deniedTools: []
+    maxConcurrentActions: 1
+    requirePlanApproval: false
+
+  - id: butler
+    role: butler
+    name: Butler
+    description: Primary orchestrator that manages user requests and coordinates agents
+    allowedTools:
+      - web_search
+      - web_fetch
+      - read_file
+    deniedTools:
+      - signup
+      - payment
+    maxConcurrentActions: 3
+    requirePlanApproval: false
+
+  - id: researcher
+    role: researcher
+    name: Researcher
+    description: Gathers information from web and files (read-only)
+    allowedTools:
+      - web_search
+      - web_fetch
+      - read_file
+    deniedTools:
+      - write_file
+      - edit_file
+      - exec_command
+      - api_call
+      - send_message
+      - signup
+      - payment
+    maxConcurrentActions: 5
+    requirePlanApproval: true
+
+  - id: executor
+    role: executor
+    name: Executor
+    description: Executes approved actions like file writes and commands
+    allowedTools:
+      - read_file
+      - write_file
+      - edit_file
+      - exec_command
+    deniedTools:
+      - web_search
+      - web_fetch
+      - api_call
+      - send_message
+      - signup
+      - payment
+    maxConcurrentActions: 2
+    requirePlanApproval: true
+
+safety:
+  defaultLevel: moderate
+  forbiddenActions:
+    - signup
+    - payment
+  dangerousActions:
+    - api_call
+    - send_message
+    - exec_command
+  secretPatterns:
+    - 'sk-[a-zA-Z0-9]{20,}'
+    - 'AKIA[0-9A-Z]{16}'
+    - 'ghp_[a-zA-Z0-9]{36}'
+    - 'Bearer\s+[a-zA-Z0-9\-._~+/]+=*'
+
+urlAllowlist:
+  - google.com
+  - github.com
+  - stackoverflow.com
+  - wikipedia.org
+  - npmjs.com
+  - developer.mozilla.org
+
+urlBlocklist:
+  - 'gambling'
+  - 'casino'
+  - 'betting'
+  - 'toto'
+  - 'adult'
+  - 'porn'
+  - 'darkweb'
+  - '\.onion'
+
+secretVault:
+  enabled: true
+  storePath: .pawnbutler/vault
+
+auditLog:
+  enabled: true
+  logPath: .pawnbutler/logs/audit.jsonl
+  alertLogPath: .pawnbutler/logs/alerts.jsonl
+  retentionDays: 30
