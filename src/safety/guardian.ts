@@ -77,7 +77,13 @@ export class Guardian {
       if (url.startsWith('http')) {
         const urlCheck = this.urlAllowlist.isAllowed(url);
         if (!urlCheck.allowed) {
-          return this.blockAction(request, safetyLevel, urlCheck.reason ?? 'URL not allowed');
+          // Blocklist pattern matches (gambling, adult, etc.) are immediately blocked
+          if (urlCheck.blockedByPattern) {
+            return this.blockAction(request, safetyLevel, urlCheck.reason ?? 'URL not allowed');
+          }
+
+          // Not in allowlist → route to approval flow (same as dangerous actions)
+          return this.requestUrlApproval(request, url, urlCheck.reason ?? 'URL not in allowlist');
         }
       }
     }
@@ -175,6 +181,82 @@ export class Guardian {
 
   destroy(): void {
     this.notificationManager?.destroy();
+  }
+
+  private async requestUrlApproval(
+    request: ActionRequest,
+    url: string,
+    reason: string,
+  ): Promise<ActionResult> {
+    let hostname: string;
+    try {
+      hostname = new URL(url).hostname;
+    } catch {
+      return this.blockAction(request, 'dangerous', `Invalid URL: ${url}`);
+    }
+
+    // If external notifications are configured, request approval via messaging channel
+    if (this.notificationManager) {
+      const sanitizedParams = this.sanitizeParams(request.params);
+      const notification: ApprovalNotification = {
+        requestId: request.id,
+        agentName: `${request.agentId} (${request.agentRole})`,
+        actionType: request.actionType,
+        safetyLevel: 'dangerous',
+        description: `Agent "${request.agentId}" wants to access unlisted URL: ${url}`,
+        params: sanitizedParams,
+      };
+
+      this.logEntry(request, 'dangerous', 'pending', 'success', `URL approval pending: ${reason}`);
+
+      try {
+        const response = await this.notificationManager.requestApproval(notification);
+
+        if (response.approved) {
+          this.urlAllowlist.addAllowed(hostname);
+          this.logEntry(request, 'dangerous', 'auto_approved', 'success',
+            `URL approved by ${response.respondedBy}, domain "${hostname}" added to session allowlist`);
+          return { requestId: request.id, success: true };
+        }
+
+        this.blockedCount++;
+        this.logEntry(request, 'dangerous', 'auto_blocked', 'blocked',
+          `URL rejected by ${response.respondedBy}: ${response.reason ?? 'No reason given'}`);
+        return {
+          requestId: request.id,
+          success: false,
+          blockedBy: 'guardian',
+          blockedReason: `URL access rejected: ${response.reason ?? 'No reason given'}`,
+        };
+      } catch {
+        this.blockedCount++;
+        this.logEntry(request, 'dangerous', 'auto_blocked', 'blocked',
+          'URL approval request failed - auto-rejected (fail-safe)');
+        return {
+          requestId: request.id,
+          success: false,
+          blockedBy: 'guardian',
+          blockedReason: 'URL approval request failed - auto-rejected (fail-safe)',
+        };
+      }
+    }
+
+    // No external notifications → return pending approval for Electron UI
+    const approvalRequest: ApprovalRequest = {
+      actionRequest: { ...request, safetyLevel: 'dangerous' },
+      status: 'pending',
+    };
+
+    this.logEntry(request, 'dangerous', 'pending', 'success', `URL approval pending: ${reason}`);
+
+    return {
+      requestId: request.id,
+      success: false,
+      data: approvalRequest,
+      error: 'Action requires approval',
+      blockedBy: 'guardian',
+      blockedReason: `URL not in allowlist - requires approval: ${reason}`,
+    };
   }
 
   private async requestExternalApproval(

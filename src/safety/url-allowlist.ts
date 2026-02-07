@@ -35,7 +35,7 @@ export class UrlAllowlist {
     ];
   }
 
-  isAllowed(url: string): { allowed: boolean; reason?: string } {
+  isAllowed(url: string): { allowed: boolean; reason?: string; blockedByPattern?: boolean } {
     let parsed: URL;
     try {
       parsed = new URL(url);
@@ -52,6 +52,7 @@ export class UrlAllowlist {
         return {
           allowed: false,
           reason: `URL matches blocked pattern: ${pattern.source}`,
+          blockedByPattern: true,
         };
       }
     }
@@ -64,6 +65,7 @@ export class UrlAllowlist {
     return {
       allowed: false,
       reason: `Domain "${hostname}" is not in the allowlist`,
+      blockedByPattern: false,
     };
   }
 

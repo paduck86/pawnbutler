@@ -254,14 +254,16 @@ describe('Guardian - Integration', () => {
     expect(result.blockedBy).toBe('guardian');
   });
 
-  it('should block URLs not in allowlist', async () => {
+  it('should route non-allowlist URLs to approval flow instead of blocking', async () => {
     const request = makeRequest({
       actionType: 'web_fetch',
       params: { url: 'https://suspicious-site.xyz/data' },
     });
     const result = await guardian.validateAction(request);
     expect(result.success).toBe(false);
-    expect(result.blockedReason).toContain('not in the allowlist');
+    expect(result.blockedReason).toContain('URL not in allowlist - requires approval');
+    expect(result.data).toBeDefined();
+    expect((result.data as { status: string }).status).toBe('pending');
   });
 
   it('should block URLs matching blocked patterns', async () => {
@@ -301,6 +303,125 @@ describe('Guardian - Integration', () => {
     const status = guardian.getStatus();
     expect(status.totalChecked).toBeGreaterThan(0);
     expect(typeof status.blocked).toBe('number');
+  });
+});
+
+// -------------------------------------------------------
+// URL Approval Flow Tests
+// -------------------------------------------------------
+describe('UrlAllowlist - blockedByPattern field', () => {
+  const allowlist = new UrlAllowlist({
+    allow: defaultConfig.urlAllowlist,
+    block: defaultConfig.urlBlocklist,
+  });
+
+  it('should set blockedByPattern=true for blocklist pattern matches', () => {
+    const result = allowlist.isAllowed('https://casino-online.com/slots');
+    expect(result.allowed).toBe(false);
+    expect(result.blockedByPattern).toBe(true);
+  });
+
+  it('should set blockedByPattern=false for non-allowlist domains', () => {
+    const result = allowlist.isAllowed('https://randomsite.xyz/page');
+    expect(result.allowed).toBe(false);
+    expect(result.blockedByPattern).toBe(false);
+  });
+
+  it('should not set blockedByPattern for allowed domains', () => {
+    const result = allowlist.isAllowed('https://github.com/repo');
+    expect(result.allowed).toBe(true);
+    expect(result.blockedByPattern).toBeUndefined();
+  });
+});
+
+describe('Guardian - URL Approval Flow', () => {
+  it('should immediately block blocklist-matched URLs', async () => {
+    const testConfig = {
+      ...defaultConfig,
+      auditLog: { ...defaultConfig.auditLog, enabled: false },
+    };
+    const g = new Guardian(testConfig);
+
+    const request = makeRequest({
+      actionType: 'web_fetch',
+      params: { url: 'https://online-casino-games.com/play' },
+    });
+    const result = await g.validateAction(request);
+    expect(result.success).toBe(false);
+    expect(result.blockedReason).toContain('blocked pattern');
+    // Should NOT have approval data (immediate block)
+    expect(result.data).toBeUndefined();
+  });
+
+  it('should route non-allowlist URLs to pending approval', async () => {
+    const testConfig = {
+      ...defaultConfig,
+      auditLog: { ...defaultConfig.auditLog, enabled: false },
+    };
+    const g = new Guardian(testConfig);
+
+    const request = makeRequest({
+      actionType: 'web_fetch',
+      params: { url: 'https://unknown-but-safe-site.com/api' },
+    });
+    const result = await g.validateAction(request);
+    expect(result.success).toBe(false);
+    expect(result.blockedReason).toContain('URL not in allowlist - requires approval');
+    expect(result.data).toBeDefined();
+    expect((result.data as { status: string }).status).toBe('pending');
+  });
+
+  it('should add domain to session allowlist after approval', () => {
+    const testConfig = {
+      ...defaultConfig,
+      auditLog: { ...defaultConfig.auditLog, enabled: false },
+    };
+    const g = new Guardian(testConfig);
+    const urlAllowlist = g.getUrlAllowlist();
+
+    // Domain not in allowlist initially
+    expect(urlAllowlist.isAllowed('https://newly-approved.com/page').allowed).toBe(false);
+
+    // Simulate what happens after approval: domain gets added
+    urlAllowlist.addAllowed('newly-approved.com');
+
+    // Now the domain should be allowed
+    expect(urlAllowlist.isAllowed('https://newly-approved.com/page').allowed).toBe(true);
+    // Subdomains should also work
+    expect(urlAllowlist.isAllowed('https://api.newly-approved.com/data').allowed).toBe(true);
+  });
+
+  it('should auto-approve previously approved domain on subsequent requests', async () => {
+    const testConfig = {
+      ...defaultConfig,
+      auditLog: { ...defaultConfig.auditLog, enabled: false },
+    };
+    const g = new Guardian(testConfig);
+
+    // Simulate a prior approval by adding domain
+    g.getUrlAllowlist().addAllowed('approved-domain.com');
+
+    const request = makeRequest({
+      actionType: 'web_fetch',
+      params: { url: 'https://approved-domain.com/data' },
+    });
+    const result = await g.validateAction(request);
+    expect(result.success).toBe(true);
+  });
+
+  it('should still allow default allowlisted domains without approval', async () => {
+    const testConfig = {
+      ...defaultConfig,
+      auditLog: { ...defaultConfig.auditLog, enabled: false },
+    };
+    const g = new Guardian(testConfig);
+
+    const request = makeRequest({
+      actionType: 'web_fetch',
+      params: { url: 'https://github.com/some/repo' },
+    });
+    const result = await g.validateAction(request);
+    expect(result.success).toBe(true);
   });
 });
 
