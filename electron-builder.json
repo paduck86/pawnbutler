@@ -18,7 +18,7 @@
   "mac": {
     "target": "dmg",
     "category": "public.app-category.utilities",
-    "identity": null
+    "identity": "-"
   },
   "dmg": {
     "title": "PawnButler",
