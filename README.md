@@ -22,6 +22,10 @@ cp pawnbutler.config.example.yaml pawnbutler.config.yaml
 npm start
 ```
 
+## Download
+
+[PawnButler-1.0.0-arm64.dmg](https://github.com/paduck86/pawnbutler/releases/download/v1.0.0/PawnButler-1.0.0-arm64.dmg) (macOS Apple Silicon)
+
 ## Desktop App
 
 ```bash
